@@ -1,55 +1,55 @@
 #### Introduction
 
-In **octopus** you can define your own types and persist their instances to the underlying database. Two databases are supported: MySQL (via [lua-resty-mysql](https://github.com/openresty/lua-resty-mysql)) and PostgreSQL (via [rocky-postgresql](https://github.com/strumasoft/luaorm/postgresql.lua)). On top of them a persistence layer is created to map each Lua object to a database table row. The persistence layer can connect, search, add, update, delete, execute transactions and finally close the connection to the database. All queries performed by the persistence layer can be executed as prepared statements by setting the property **usePreparedStatement** to **true**.
+**luaorm** let's you define types and persist their instances to the underlying database, currently it supports two databases: MySQL (via [lua-resty-mysql](https://github.com/openresty/lua-resty-mysql)) and PostgreSQL (via [rocky-postgresql](https://github.com/strumasoft/luaorm/postgresql.lua)). It can be used as an ORM for OpenResty and as ORM for native Lua scripts willing to connect to these two databases with or without TLS encryption. Checkout the example tests. The persistence layer maps each Lua object to a database table row, it can connect, search, add, update, delete, execute transactions and finally close the connection to the database. All queries performed by the persistence layer can be executed as plain SQL or as prepared statements by setting the property **usePreparedStatement** to **true**.
 
 
 #### Type system
 
 ```lua
 return {
-    localizedString = {
-        content             =   {type = "string", length = 1000},
-        locale              =   {type = "string", length = 2},
-    },
-    
-    country = {
-        isocode             =   {type = "string", length = 2, unique = true},
-        flag                =   "string",
-        currency            =   hasOne("currency", "countries"),
-        locale              =   {type = "string", length = 2},
-    },
+  localizedString = {
+    content             =   {type = "string", length = 1000},
+    locale              =   {type = "string", length = 2},
+  },
+  
+  country = {
+    isocode             =   {type = "string", length = 2, unique = true},
+    flag                =   "string",
+    currency            =   hasOne("currency", "countries"),
+    locale              =   {type = "string", length = 2},
+  },
 
-    currency = {
-        isocode             =   {type = "string", length = 3, unique = true},
-        symbol              =   "string",
-        symbolBeforeAmount  =   "boolean",
-        countries           =   hasMany("country", "currency")
-    },
-    
-    price = {
-        currencyIsocode     =   {type = "string", length = 3},
-        value               =   "float",
-        net                 =   "boolean",
-    },
-    
-    product = {
-        code                =   {type = "string", unique = true},
-        name                =   hasMany("localizedString"),
-        price               =   "price",
-    },
-    
-    user = {
-        email               =   {type = "string", unique = true},
-        addresses           =   hasMany("address", "user"),
-    },
-    
-    address = {
-        user                =   hasOne("user", "addresses"),
-        country             =   "string",
-        city                =   "string",
-        line1               =   "string",
-        line2               =   "string",
-    },
+  currency = {
+    isocode             =   {type = "string", length = 3, unique = true},
+    symbol              =   "string",
+    symbolBeforeAmount  =   "boolean",
+    countries           =   hasMany("country", "currency")
+  },
+  
+  price = {
+    currencyIsocode     =   {type = "string", length = 3},
+    value               =   "float",
+    net                 =   "boolean",
+  },
+  
+  product = {
+    code                =   {type = "string", unique = true},
+    name                =   hasMany("localizedString"),
+    price               =   "price",
+  },
+  
+  user = {
+    email               =   {type = "string", unique = true},
+    addresses           =   hasMany("address", "user"),
+  },
+  
+  address = {
+    user                =   hasOne("user", "addresses"),
+    country             =   "string",
+    city                =   "string",
+    line1               =   "string",
+    line2               =   "string",
+  },
 }
 ```
 
@@ -158,9 +158,9 @@ Search for objects with prototype **proto** with format `{type = value}` and ret
 ```lua
 -- return product with code p1
 return db:find({product = {code = op.equal("p1")}}, {
-    "pictures",
-    "prices",
-    {name = {locale = "en"}}    
+  "pictures",
+  "prices",
+  {name = {locale = "en"}}    
 })
 
 -- return all product attributes that belong to all products from category:
@@ -169,13 +169,13 @@ return db:find({product = {code = op.equal("p1")}}, {
 --      c3 - size
 --      c4 - nothing
 return db:find({
-    productAttribute = {
-        values = {
-            products = {
-                categories = {code = op.equal("c1")}
-            }
-        }
+  productAttribute = {
+    values = {
+      products = {
+        categories = {code = op.equal("c1")}
+      }
     }
+  }
 })
 
 -- return all categories that start with letter c
@@ -183,24 +183,24 @@ return db:find({category = {code = op.like("c%")}})
 
 -- return all subcategories of c1
 return db:find({
-    category = {
-        supercategories = {
-            code = op.equal("c1")
-        }
+  category = {
+    supercategories = {
+      code = op.equal("c1")
     }
+  }
 })
 
 -- return all products ordered by code and then by id, pre-populate its categories
 return db:find({
-	product = {}, 
-	orderBy = {op.asc("code"), op.asc("id")}
-	}, {"categories"})
+  product = {}, 
+  orderBy = {op.asc("code"), op.asc("id")}
+  }, {"categories"})
 
 -- return all delivery methods and pre-populate name and description in en locale
 local locale = "en"
 return db:find({deliveryMethod = {}}, {
-	{name = {locale = locale}},
-	{description = {locale = locale}},
+  {name = {locale = locale}},
+  {description = {locale = locale}},
 })
 ```
 
@@ -234,13 +234,13 @@ Similar to **db:find(proto, references)** but just count the found objects.
 
 The format of the **proto** prototype is `{type = value}`.
 
-```Lua
+```lua
 local userId = db:add({user = {email = "foo@bar.baz"}}) 
 
 local address = {
-    user = userId,
-    country = "Bulgaria",
-    city = "Sofia",
+  user = userId,
+  country = "Bulgaria",
+  city = "Sofia",
 }
 
 local addressId = db:add({address = address})
@@ -263,9 +263,9 @@ local userId1 = db:add({user = {email = userEmail1}})
 local userId2 = db:add({user = {email = userEmail2}})
 
 local address = {
-    user = userId1,
-    country = "Bulgaria",
-    city = "Sofia",
+  user = userId1,
+  country = "Bulgaria",
+  city = "Sofia",
 }
 
 db:add({address = address})
@@ -291,9 +291,9 @@ db:delete({user = {email = "foo@bar.baz"}})
 
 Whenever you need to execute more than one query and to be sure that they will either succeed all as a group or nothing happen then you need a transaction! Wrap all required queries in a function and pass it as the first argument to **db:transaction** with any extra arguments after the function name. The method will either return a response or throw an exception.
 
-```Lua
+```lua
 local function f (foo, bar, baz)
-    -- do some queries --
+  -- do some queries --
 end
 
 -- execute transation but do not catch exeption
